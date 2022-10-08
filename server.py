@@ -1,4 +1,5 @@
 from audioop import mul
+from concurrent.futures import thread
 import io
 import socket
 import struct
@@ -9,7 +10,7 @@ from PIL import Image
 import cv2
 from matplotlib import pyplot as pl
 import keyboard
-import multiprocessing
+import threading
 
 # Pins for raspi
 # 7	<–>	In1(yellow)
@@ -27,7 +28,7 @@ def play_video():
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind(
         (config('IP_ADDRESS'), int(config('PORT'))))  # ADD IP HERE
-    server_socket.listen(1)
+    server_socket.listen(2)
     mouth_cascade = cv2.CascadeClassifier(
         cv2.data.haarcascades + 'haarcascade_mcs_mouth.xml')
     nose_cascade = cv2.CascadeClassifier(
@@ -64,19 +65,16 @@ def play_video():
             mouth = mouth_cascade.detectMultiScale(gray, 1.1, 4)
             nose = mouth_cascade.detectMultiScale(gray, 1.1, 4)
             faces = face_cascade.detectMultiScale(gray, 1.1, 4)
-            profiles = profile_cascade.detectMultiScale(
-                gray, scaleFactor=1.1, minNeighbors=4)
-
-            if len(mouth) != 0 and len(nose) != 0:
-                for (x, y, w, h) in faces:
-                    cv2.rectangle(im, (x, y), (x+w, y+h), (255, 0, 0), 2)
-                    cv2.putText(im, 'Not wearing Mask', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX,0.9, (36, 255, 12), 2)
-                for (x, y, w, h) in profiles:
-                    cv2.rectangle(im, (x, y), (x+w, y+h), (255, 0, 0), 2)
-                    cv2.putText(im, 'Not wearing Mask', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX,0.9, (36, 255, 12), 2)
+            profiles = profile_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=4)
+            for (x, y, w, h) in faces:
+                cv2.rectangle(im, (x, y), (x+w, y+h), (255, 0, 0), 2)
+                cv2.putText(im, 'Not wearing Mask', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX,0.9, (36, 255, 12), 2)
+            for (x, y, w, h) in profiles:
+                cv2.rectangle(im, (x, y), (x+w, y+h), (255, 0, 0), 2)
+                cv2.putText(im, 'Not wearing Mask', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX,0.9, (36, 255, 12), 2)
 
             cv2.imshow('Video', im)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(1) & 0xFF == ord('p'):
                 break
 
             print('Image is %dx%d' % image.size)
@@ -90,8 +88,7 @@ def play_video():
 def send_dir():
     server_dir_socket = socket.socket()
     server_dir_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_dir_socket.bind(
-        (config('IP_ADDRESS'), int(config('DIRPORT'))))  # ADD IP HERE
+    server_dir_socket.bind((config('IP_ADDRESS'), int(config('DIRPORT'))))  # ADD IP HERE
     server_dir_socket.listen(1)
 
     conn, _ = server_dir_socket.accept()
@@ -106,11 +103,8 @@ def send_dir():
 
 if __name__ == "__main__":
 
-    p1 = multiprocessing.Process(target=play_video)
-    p2 = multiprocessing.Process(target=send_dir)
+    p1 = threading.Thread(target = play_video)
+    p2 = threading.Thread(target = send_dir)
 
     p1.start()
     p2.start()
-
-    p2.join()
-    p1.join()
