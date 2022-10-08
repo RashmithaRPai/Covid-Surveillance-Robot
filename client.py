@@ -36,7 +36,7 @@ try:
         # If we've been capturing for more than 30 seconds, quit
         if time.time() - start > 60:
             break
-        # Reset the stream for the next capture
+        # Reset the stream for the next capture 
         stream.seek(0)
         stream.truncate()
     # Write a length of zero to the stream to signal we're done
