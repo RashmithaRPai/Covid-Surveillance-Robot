@@ -26,25 +26,17 @@ def play_video():
     # video socket
     server_socket = socket.socket()
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.bind(
-        (config('IP_ADDRESS'), int(config('PORT'))))  # ADD IP HERE
-    server_socket.listen(2)
-    mouth_cascade = cv2.CascadeClassifier(
-        cv2.data.haarcascades + 'haarcascade_mcs_mouth.xml')
-    nose_cascade = cv2.CascadeClassifier(
-        cv2.data.haarcascades + 'haarcascade_mcs_nose.xml')
-    face_cascade = cv2.CascadeClassifier(
-        cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    profile_cascade = cv2.CascadeClassifier(
-        cv2.data.haarcascades + 'haarcascade_profileface.xml')
+    server_socket.bind((config('IP_ADDRESS'), int(config('PORT'))))  # ADD IP HERE
+    server_socket.listen(1)
+    #face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    profile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_profileface.xml')
     connection = server_socket.accept()[0].makefile('rb')
     try:
         img = None
         while True:
             # Read the length of the image as a 32-bit unsigned int. If the
             # length is zero, quit the loop
-            image_len = struct.unpack(
-                '<L', connection.read(struct.calcsize('<L')))[0]
+            image_len = struct.unpack('<L', connection.read(struct.calcsize('<L')))[0]
             if not image_len:
                 break
 
@@ -62,16 +54,15 @@ def play_video():
             im = cv2.cvtColor(numpy.array(image), cv2.COLOR_RGB2BGR)
             gray = cv2.cvtColor(numpy.array(image), cv2.COLOR_BGR2GRAY)
 
-            mouth = mouth_cascade.detectMultiScale(gray, 1.1, 4)
-            nose = mouth_cascade.detectMultiScale(gray, 1.1, 4)
-            faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+            #faces = face_cascade.detectMultiScale(gray, 1.3, 4)
             profiles = profile_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=4)
-            for (x, y, w, h) in faces:
-                cv2.rectangle(im, (x, y), (x+w, y+h), (255, 0, 0), 2)
-                cv2.putText(im, 'Not wearing Mask', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX,0.9, (36, 255, 12), 2)
+
+            #for (x, y, w, h) in faces:
+                #cv2.rectangle(im, (x, y), (x+w, y+h), (255, 0, 0), 2)
+                #cv2.putText(im, 'Not wearing Mask(front)', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX,0.9, (36, 255, 12), 2)
             for (x, y, w, h) in profiles:
                 cv2.rectangle(im, (x, y), (x+w, y+h), (255, 0, 0), 2)
-                cv2.putText(im, 'Not wearing Mask', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX,0.9, (36, 255, 12), 2)
+                cv2.putText(im, 'Not wearing Mask(profile)', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX,0.9, (36, 255, 12), 2)
 
             cv2.imshow('Video', im)
             if cv2.waitKey(1) & 0xFF == ord('p'):
