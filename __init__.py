@@ -1,0 +1,1 @@
+from .try_server import define_class

@@ -11,6 +11,12 @@ import cv2
 from matplotlib import pyplot as pl
 import keyboard
 import threading
+import multiprocessing as mp
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import argparse, os, cv2, traceback, subprocess
+from glob import glob
+import face_alignment
+from try_server import define_class
 
 # Pins for raspi
 # 7	<–>	In1(yellow)
@@ -20,7 +26,27 @@ import threading
 # GND	<–>	GND
 
 # Accept a single connection and make a file-like object out of it
+import sys
 
+if sys.version_info[0] < 3 and sys.version_info[1] < 2:
+	raise Exception("Must be using >= Python 3.2")
+
+from os import listdir, path
+
+if not path.isfile('face_alignment/detection/sfd/s3fd.pth'):
+	raise FileNotFoundError('Save the s3fd model to face_detection/detection/sfd/s3fd.pth \
+							before running this script!')
+
+
+classCategory = {
+    0: "with mask",
+    1: "improper mask",
+    2: "wihout mask"
+}
+
+
+fa = face_alignment.FaceAlignment(face_alignment.LandmarksType._2D, flip_input=False, face_detector='blazeface', device='cuda:{}'.format(0))
+template = 'ffmpeg -loglevel panic -y -i {} -strict -2 {}'
 
 def play_video():
     # video socket
@@ -28,9 +54,9 @@ def play_video():
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind((config('IP_ADDRESS'), int(config('PORT'))))  # ADD IP HERE
     server_socket.listen(1)
-    #face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    profile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_profileface.xml')
-    connection = server_socket.accept()[0].makefile('rb')
+
+    connection ,adr = server_socket.accept()
+    connection = connection.makefile('rb')
     try:
         img = None
         while True:
@@ -49,28 +75,24 @@ def play_video():
             # processing on it
             image_stream.seek(0)
             print(img)
-            image = Image.open(image_stream)
+            frame = Image.open(image_stream)
+            preds = fa.get_landmarks(frame, return_bboxes=True)
+            if preds != (None, None, None):
+                cords=[]
+                #print(preds)
+                for i in enumerate(preds[2][0]):
+                    x = int(i[1])
+                    cords.append(x)
+                x1, y1, x2, y2, _= cords
+                copyframe = frame.copy()
+                #cv2.imshow("face", copyframe[x1:x2,y1:y2])
+                index = define_class(copyframe[x1:x2,y1:y2])
+                cv2.rectangle(frame, (x1,y1), (x2, y2), (255, 0, 0), 2)
+                cv2.putText(frame, str(classCategory[index]), (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36,255,12), 2)
 
-            im = cv2.cvtColor(numpy.array(image), cv2.COLOR_RGB2BGR)
-            gray = cv2.cvtColor(numpy.array(image), cv2.COLOR_BGR2GRAY)
-
-            #faces = face_cascade.detectMultiScale(gray, 1.3, 4)
-            profiles = profile_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=4)
-
-            #for (x, y, w, h) in faces:
-                #cv2.rectangle(im, (x, y), (x+w, y+h), (255, 0, 0), 2)
-                #cv2.putText(im, 'Not wearing Mask(front)', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX,0.9, (36, 255, 12), 2)
-            for (x, y, w, h) in profiles:
-                cv2.rectangle(im, (x, y), (x+w, y+h), (255, 0, 0), 2)
-                cv2.putText(im, 'Not wearing Mask(profile)', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX,0.9, (36, 255, 12), 2)
-
-            cv2.imshow('Video', im)
+            cv2.imshow('Video', frame)
             if cv2.waitKey(1) & 0xFF == ord('p'):
-                break
-
-            print('Image is %dx%d' % image.size)
-            image.verify()
-            print('Image is verified')
+                    break
     finally:
         connection.close()
         server_socket.close()
