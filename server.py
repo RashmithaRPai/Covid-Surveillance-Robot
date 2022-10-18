@@ -27,7 +27,7 @@ import keyboard
 import threading
 from glob import glob
 import face_alignment
-from try_server import define_class
+from face_type import define_class
 
 # Pins for raspi
 # 7	<–>	In1(yellow)

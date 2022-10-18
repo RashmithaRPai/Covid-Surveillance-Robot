@@ -1,1 +1,1 @@
-from .try_server import define_class
+from .face_type import define_class

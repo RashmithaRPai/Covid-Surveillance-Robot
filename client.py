@@ -7,7 +7,7 @@ import picamera
 
 client_socket = socket.socket()
 
-client_socket.connect((config('IP_ADDRESS'), int(config(PORT))))  # ADD IP HERE
+client_socket.connect((config('IP_ADDRESS'), int(config('PORT'))))  # ADD IP HERE
 
 # Make a file-like object out of the connection
 connection = client_socket.makefile('wb')
@@ -34,8 +34,6 @@ try:
         stream.seek(0)
         connection.write(stream.read())
         # If we've been capturing for more than 30 seconds, quit
-        if time.time() - start > 60:
-            break
         # Reset the stream for the next capture 
         stream.seek(0)
         stream.truncate()
