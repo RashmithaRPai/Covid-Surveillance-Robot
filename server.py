@@ -100,6 +100,7 @@ def play_video():
 
 
 def send_dir():
+    #Direction socket
     server_dir_socket = socket.socket()
     server_dir_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_dir_socket.bind((config('IP_ADDRESS'), int(config('DIRPORT'))))  # ADD IP HERE
@@ -116,7 +117,7 @@ def send_dir():
 
 
 if __name__ == "__main__":
-
+    #Create multiple threads for different sockets ie one socket just for video feed and other for directions
     p1 = threading.Thread(target = play_video)
     p2 = threading.Thread(target = send_dir)
 
