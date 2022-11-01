@@ -10,17 +10,20 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     while True:
         data = s.recv(1024).decode()
         if data=="w":
-            robby.forward()
+            robby.forward(0.5)
             print("forward")
         elif data == "a":
-            robby.left()
+            robby.right(0.5)
             print('left')
         elif data == "d":
-            robby.right()
+            robby.left(0.5)
             print("right")
         elif  data == "s":
-            robby.backward()
+            robby.backward(0.5)
             print("back")
+        elif data == "z":
+            robby.stop()
+            print("stop")
         elif data == "p":
             robby.stop()
             s.close()

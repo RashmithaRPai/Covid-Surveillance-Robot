@@ -13,7 +13,7 @@ client_socket.connect((config('IP_ADDRESS'), int(config('PORT'))))  # ADD IP HER
 connection = client_socket.makefile('wb')
 try:
     camera = picamera.PiCamera()
-    camera.vflip = True
+    #camera.vflip = True
     camera.resolution = (500, 480)
     # Start a preview and let the camera warm up for 2 seconds
     camera.start_preview()
