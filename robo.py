@@ -25,6 +25,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             robby.stop()
             print("stop")
         elif data == "p":
+            #if pressed 'p' close socket
             robby.stop()
             s.close()
             client_socket.close()
